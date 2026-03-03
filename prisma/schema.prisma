@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Sender {
+  USER
+  TUNAI
+}
+
+enum LeadStage {
+  NOT_FIT
+  EARLY_STAGE
+  HIGH_INTENT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  messages  Message[]
+  lead      Lead?
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  sessionId String
+  sender    Sender
+  content   String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id            String      @id @default(uuid())
+  sessionId     String      @unique
+  contactType   String
+  contactValue  String
+  stage         LeadStage
+  score         Int
+  status        LeadStatus  @default(NEW)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  session       Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
