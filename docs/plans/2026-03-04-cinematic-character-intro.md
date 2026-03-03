@@ -1,3 +1,31 @@
+# Cinematic + Character Intro Implementation Plan
+
+> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+
+**Goal:** Replace the abstract 4-line story screen with a 3-phase intro: 2 cinematic lines → Tunai character intro (messages bubble in) → fade into full chat.
+
+**Architecture:** Single `page.tsx` file, phase state machine (`"cinematic" | "character" | "chat"`). Cinematic phase auto-advances, character phase reveals GREETING_MSGS one-by-one with typing indicators. Transitioning to chat seeds messages state with greeting history. New CSS classes in `globals.css`.
+
+**Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind CSS v4, custom CSS classes.
+
+---
+
+### Task 1: Update `page.tsx` — phase state machine + cinematic phase
+
+**Files:**
+- Modify: `app/page.tsx`
+
+**Step 1: Replace the current story state with a 3-phase system**
+
+Replace all state/logic in `page.tsx` with this updated version. Key changes:
+- `showChat: boolean` + `storyStep: number` → `phase: "cinematic" | "character" | "chat"`
+- `STORY_LINES` trimmed to 2 cinematic lines
+- Cinematic phase auto-advances each line with 1800ms delay, then transitions to `"character"` after 1000ms pause
+- Tap/click anywhere on cinematic screen skips to character phase immediately
+
+Here is the complete new `app/page.tsx`:
+
+```tsx
 "use client"
 
 import Image from "next/image"
@@ -27,41 +55,37 @@ const INITIAL_SUGGESTIONS = [
   "What exactly does Tunai do?",
 ]
 
-const TYPING_DELAYS = [400, 1000, 800]
-const MSG_PAUSES   = [900, 1100, 1000]
-
 type Phase = "cinematic" | "character" | "chat"
-
-function initSessionId(): string {
-  if (typeof window === "undefined") return ""
-  let id = localStorage.getItem("tunai_session")
-  if (!id) {
-    id = uuidv4()
-    localStorage.setItem("tunai_session", id)
-  }
-  return id
-}
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("cinematic")
 
   // Cinematic phase
-  const [cinematicStep, setCinematicStep] = useState(0)
+  const [cinematicStep, setCinematicStep] = useState(0) // 0 = nothing visible, 1 = line1, 2 = line2
 
   // Character phase
-  const [visibleMsgs, setVisibleMsgs] = useState(0)
+  const [visibleMsgs, setVisibleMsgs] = useState(0) // how many GREETING_MSGS are visible
   const [showTyping, setShowTyping] = useState(false)
   const [showChips, setShowChips] = useState(false)
 
   // Chat phase
-  const [sessionId] = useState<string>(initSessionId)
+  const [sessionId, setSessionId] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const pendingFirstMsg = useRef<string | null>(null)
+
+  // Session ID init
+  useEffect(() => {
+    let id = localStorage.getItem("tunai_session")
+    if (!id) {
+      id = uuidv4()
+      localStorage.setItem("tunai_session", id)
+    }
+    setSessionId(id)
+  }, [])
 
   // ── Phase: cinematic ─────────────────────
   useEffect(() => {
@@ -81,6 +105,10 @@ export default function Home() {
   }
 
   // ── Phase: character ─────────────────────
+  // Sequence: typing → msg1 → typing → msg2 → typing → msg3 → chips
+  const TYPING_DELAYS = [400, 1000, 800]
+  const MSG_PAUSES   = [900, 1100, 1000]
+
   useEffect(() => {
     if (phase !== "character") return
 
@@ -88,10 +116,12 @@ export default function Home() {
     const timers: NodeJS.Timeout[] = []
 
     GREETING_MSGS.forEach((_, i) => {
+      // show typing indicator
       const tTyping = setTimeout(() => setShowTyping(true), elapsed)
       timers.push(tTyping)
       elapsed += TYPING_DELAYS[i]
 
+      // reveal message, hide typing
       const tMsg = setTimeout(() => {
         setShowTyping(false)
         setVisibleMsgs(i + 1)
@@ -100,6 +130,7 @@ export default function Home() {
       elapsed += MSG_PAUSES[i]
     })
 
+    // show chips after last message
     const tChips = setTimeout(() => setShowChips(true), elapsed)
     timers.push(tChips)
 
@@ -110,37 +141,28 @@ export default function Home() {
   const enterChat = (firstMsg?: string) => {
     setMessages([...GREETING_MSGS])
     setSuggestions([])
-    if (firstMsg) {
-      pendingFirstMsg.current = firstMsg
-    }
     setPhase("chat")
+    if (firstMsg) {
+      // send after state settles
+      setTimeout(() => sendMessage(firstMsg, [...GREETING_MSGS]), 50)
+    }
   }
-
-  // Fire pending first message once phase = "chat" has committed
-  useEffect(() => {
-    if (phase !== "chat") return
-    const msg = pendingFirstMsg.current
-    if (!msg) return
-    pendingFirstMsg.current = null
-    sendMessage(msg)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
 
   // ── Chat ─────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, loading])
 
-  async function sendMessage(text?: string) {
+  async function sendMessage(text?: string, initialMessages?: ChatMessage[]) {
     const msg = text || input
-    if (!msg.trim() || loading || !sessionId) return
+    if (!msg.trim() || loading) return
 
     setLoading(true)
     setInput("")
     setSuggestions([])
 
     const userMsg: ChatMessage = { sender: "USER", text: msg }
-    setMessages((prev) => [...prev, userMsg])
+    setMessages((prev) => [...(initialMessages ?? prev), userMsg])
 
     try {
       const res = await fetch("/api/chat", {
@@ -148,10 +170,6 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, message: msg }),
       })
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
-      }
 
       const data = await res.json()
       setMessages((prev) => [
@@ -209,19 +227,21 @@ export default function Home() {
     return (
       <div className="char-screen">
         <div className="char-inner">
+          {/* Avatar */}
           <div className="char-avatar-wrap char-avatar-visible">
             <Image src="/logo.png" alt="Tunai" width={72} height={72} className="char-avatar" />
             <span className="char-online-dot" />
           </div>
 
+          {/* Message bubbles */}
           <div className="char-bubbles">
-            {visibleMsgs > 0 && <span className="char-sender">Tunai</span>}
             {GREETING_MSGS.slice(0, visibleMsgs).map((m, i) => (
               <div key={i} className="char-bubble char-bubble-in">
                 {m.text}
               </div>
             ))}
 
+            {/* Typing indicator */}
             {showTyping && (
               <div className="char-bubble char-typing-bubble">
                 <div className="typing">
@@ -231,6 +251,7 @@ export default function Home() {
             )}
           </div>
 
+          {/* Quick-reply chips */}
           {showChips && (
             <div className="char-chips char-chips-in">
               {INITIAL_SUGGESTIONS.map((s, i) => (
@@ -250,6 +271,7 @@ export default function Home() {
   // ══════════════════════════════════════════
   return (
     <div className="chat-shell chat-fade-in">
+      {/* Top Bar */}
       <div className="topbar">
         <div className="topbar-avatar">
           <Image src="/logo.png" alt="Tunai" width={40} height={40} />
@@ -263,6 +285,7 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Messages */}
       <div className="messages">
         {messages.map((m, i) => (
           <div key={i} className={`msg ${m.sender === "USER" ? "msg-user" : "msg-ai"}`}>
@@ -293,6 +316,7 @@ export default function Home() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Quick Replies */}
       {suggestions.length > 0 && !loading && (
         <div className="quick-replies">
           {suggestions.map((s, i) => (
@@ -303,6 +327,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* Composer */}
       <div className="composer">
         <div className="composer-inner">
           <input
@@ -328,3 +353,195 @@ export default function Home() {
     </div>
   )
 }
+```
+
+**Step 2: Verify it compiles (no build step needed in dev)**
+
+Run: `pnpm dev` and check there are no TypeScript errors in terminal.
+
+**Step 3: Commit**
+
+```bash
+git add app/page.tsx
+git commit -m "feat: cinematic + character intro phase state machine"
+```
+
+---
+
+### Task 2: Add CSS for character intro screen
+
+**Files:**
+- Modify: `app/globals.css`
+
+**Step 1: Append new CSS classes at the bottom of `globals.css`**
+
+Add these blocks after the last existing rule (after `.story-button:hover svg`):
+
+```css
+/* ══════════════════════════════════════════════
+   CHARACTER INTRO SCREEN
+   ══════════════════════════════════════════════ */
+
+.char-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  width: 100vw;
+  background: #000;
+  padding: 24px;
+  animation: chatFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.char-inner {
+  max-width: 520px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+/* Avatar */
+.char-avatar-wrap {
+  position: relative;
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: scale(0.88);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.char-avatar-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.char-avatar {
+  border-radius: 96px;
+  border: 1px solid var(--w-12);
+  box-shadow: 0 0 48px rgba(255, 255, 255, 0.07);
+  display: block;
+}
+
+.char-online-dot {
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 14px;
+  height: 14px;
+  background: #34D399;
+  border: 2.5px solid #000;
+  border-radius: 99px;
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Bubbles container */
+.char-bubbles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.char-bubble {
+  background: var(--w-8);
+  color: var(--w-84);
+  border-radius: 20px 20px 20px 4px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.5;
+  max-width: 88%;
+  border: 1px solid var(--w-8);
+}
+
+.char-bubble-in {
+  animation: rise 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.char-typing-bubble {
+  padding: 10px 16px;
+}
+
+/* Chips */
+.char-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.char-chips-in {
+  animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+}
+
+/* Story screen skip hint */
+.story-skip-hint {
+  font-size: 12px;
+  color: var(--w-20);
+  letter-spacing: 0.04em;
+  margin-top: 48px;
+  text-transform: lowercase;
+  transition: opacity 0.4s ease;
+}
+```
+
+**Step 2: Verify visually**
+
+Open `http://localhost:3000` and watch:
+1. Two cinematic lines appear with blur-in effect
+2. After ~4s (or tap) → character screen fades in, avatar appears, typing dots show, messages bubble in one by one, then chips slide up
+3. Tap a chip → fades into full chat with greeting history loaded
+
+**Step 3: Commit**
+
+```bash
+git add app/globals.css
+git commit -m "feat: add character intro CSS classes"
+```
+
+---
+
+### Task 3: Fix `enterChat` — ensure chip tap transitions cleanly to chat
+
+**Files:**
+- Modify: `app/page.tsx`
+
+**Note:** The `sendMessage` function in the chat phase references `initialMessages` for the first message after character phase. But because `setPhase("chat")` and `setMessages(...)` are batched, the `setTimeout` trick ensures the first user message is sent after state settles. Verify this works end-to-end:
+
+**Step 1: Test chip → chat flow manually**
+- Open `http://localhost:3000`
+- Wait for chips to appear in character phase
+- Tap "Planning a college fest"
+- Verify: full chat opens with greeting messages + user message + Tunai typing indicator
+- Verify: Tunai's reply arrives and quick-reply chips update
+
+**Step 2: If `sendMessage` fires before `sessionId` is set**, there will be a 400 error. Add a guard:
+
+In `sendMessage`, add early return if `!sessionId`:
+```tsx
+async function sendMessage(text?: string, initialMessages?: ChatMessage[]) {
+  const msg = text || input
+  if (!msg.trim() || loading || !sessionId) return
+  // ... rest unchanged
+```
+
+**Step 3: Commit if any fix was needed**
+
+```bash
+git add app/page.tsx
+git commit -m "fix: guard sendMessage against missing sessionId"
+```
+
+---
+
+### Done
+
+The feature is complete when:
+- [ ] Cinematic screen shows 2 lines with blur-in, tap skips
+- [ ] Character screen: avatar fades in, typing indicator, 3 messages bubble in, chips appear
+- [ ] Tapping a chip opens full chat with history + sends the chip text
+- [ ] Chat works exactly as before (API, quick replies, composer)
