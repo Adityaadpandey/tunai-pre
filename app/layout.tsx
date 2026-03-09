@@ -9,9 +9,9 @@ const syne = Syne({
 });
 
 export const metadata: Metadata = {
-  title: "Tunai — Event Match",
+  title: "Tunai — The Operating System for Events",
   description:
-    "Find out if Tunai is the right event operating system for your team. Chat with our AI qualifier.",
+    "Events run on spreadsheets, WhatsApp groups, and fragmented tools. Tunai brings everything into one unified system. Join the waitlist.",
 };
 
 export default function RootLayout({

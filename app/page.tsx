@@ -10,20 +10,20 @@ interface ChatMessage {
 }
 
 const CINEMATIC_LINES = [
-  "Every great event starts with a simple idea.",
-  "Turning that idea into reality?",
+  "Events are creative.",
+  "The operations behind them? Chaos.",
 ]
 
 const GREETING_MSGS: ChatMessage[] = [
-  { sender: "TUNAI", text: "Hey! 👋 I'm Tunai." },
-  { sender: "TUNAI", text: "I help teams automate vendor ops, logistics, and coordination for events at scale." },
-  { sender: "TUNAI", text: "What kind of event are you working on?" },
+  { sender: "TUNAI", text: "Hey 👋 I'm Tunai." },
+  { sender: "TUNAI", text: "I'm building the operating system for events — one place to run your team, vendors, tickets, and payments." },
+  { sender: "TUNAI", text: "What kind of event are you organising?" },
 ]
 
 const INITIAL_SUGGESTIONS = [
   "Planning a college fest",
-  "Organizing a conference",
-  "Running a music festival",
+  "Organising a hackathon",
+  "Running a concert or show",
   "What exactly does Tunai do?",
 ]
 
