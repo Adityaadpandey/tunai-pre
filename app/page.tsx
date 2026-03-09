@@ -10,22 +10,21 @@ interface ChatMessage {
 }
 
 const CINEMATIC_LINES = [
-  "Events don't fail because of bad ideas.",
-  "They fail because coordination is broken.",
-  "There's a fix for that now.",
+  <>Events don't fail because of bad ideas.</>,
+  <>They fail because coordination is broken.</>,
+  <>There's a fix for that now.</>,
 ]
 
 const GREETING_MSGS: ChatMessage[] = [
   { sender: "TUNAI", text: "Hey 👋 I'm Tunai." },
-  { sender: "TUNAI", text: "I'm building the operating system for events — one place to run your team, vendors, tickets, and payments." },
-  { sender: "TUNAI", text: "What kind of event are you organising?" },
+  { sender: "TUNAI", text: "I'm an operating system for events — one place to run your team, vendors, tickets, and payments." },
+  { sender: "TUNAI", text: "What do you want to know?" },
 ]
 
 const INITIAL_SUGGESTIONS = [
-  "Planning a college fest",
-  "Organising a hackathon",
-  "Running a concert or show",
-  "What exactly does Tunai do?",
+  "I am a organiser, What can Tunai do for me?",
+  "Organising an Hackathon, how can I use Tunai?",
+  "What are the features of Tunai?",
 ]
 
 const TYPING_DELAYS = [400, 1000, 800]
@@ -240,6 +239,40 @@ export default function Home() {
                   {s}
                 </button>
               ))}
+            </div>
+          )}
+
+          {showChips && (
+            <div className="char-composer char-chips-in">
+              <div className="composer-inner">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey && input.trim()) {
+                      e.preventDefault()
+                      enterChat(input.trim())
+                      setInput("")
+                    }
+                  }}
+                  placeholder="Or type something..."
+                />
+                <button
+                  className="send"
+                  onClick={() => {
+                    if (input.trim()) {
+                      enterChat(input.trim())
+                      setInput("")
+                    }
+                  }}
+                  disabled={!input.trim()}
+                  aria-label="Send message"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
         </div>
