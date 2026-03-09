@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "Tunai — The Operating System for Events",
   description:
     "Events run on spreadsheets, WhatsApp groups, and fragmented tools. Tunai brings everything into one unified system. Join the waitlist.",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover",
+  },
 };
 
 export default function RootLayout({
