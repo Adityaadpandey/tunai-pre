@@ -10,8 +10,9 @@ interface ChatMessage {
 }
 
 const CINEMATIC_LINES = [
-  "Events are creative.",
-  "The operations behind them? Chaos.",
+  "Events don't fail because of bad ideas.",
+  "They fail because coordination is broken.",
+  "There's a fix for that now.",
 ]
 
 const GREETING_MSGS: ChatMessage[] = [
@@ -67,15 +68,16 @@ export default function Home() {
   useEffect(() => {
     if (phase !== "cinematic") return
 
-    const t1 = setTimeout(() => setCinematicStep(1), 600)
-    const t2 = setTimeout(() => setCinematicStep(2), 2400)
-    const t3 = setTimeout(() => setPhase("character"), 4200)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+    const t1 = setTimeout(() => setCinematicStep(1), 500)
+    const t2 = setTimeout(() => setCinematicStep(2), 2000)
+    const t3 = setTimeout(() => setCinematicStep(3), 3500)
+    const t4 = setTimeout(() => setPhase("character"), 5200)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4) }
   }, [phase])
 
   const skipCinematic = () => {
     if (phase === "cinematic") {
-      setCinematicStep(2)
+      setCinematicStep(3)
       setPhase("character")
     }
   }
