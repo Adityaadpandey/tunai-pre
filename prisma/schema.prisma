@@ -45,15 +45,23 @@ model Message {
 }
 
 model Lead {
-  id            String      @id @default(uuid())
-  sessionId     String      @unique
-  contactType   String
-  contactValue  String
-  stage         LeadStage
-  score         Int
-  status        LeadStatus  @default(NEW)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  sessionId       String      @unique
+  contactType     String
+  contactValue    String
+  stage           LeadStage
+  score           Int
+  status          LeadStatus  @default(NEW)
+  eventFrequency  String?
+  emailSent       Boolean     @default(false)
+  organizerName   String?
+  eventName       String?
+  attendeeCount   String?
+  vendorCount     String?
+  teamSize        String?
+  biggestPain     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  session       Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session         Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

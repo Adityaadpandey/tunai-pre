@@ -1,3 +1,4 @@
+import { sendCircleEmail } from "@/lib/email"
 import { openai } from "@/lib/openai"
 import { prisma } from "@/lib/prisma"
 import { SYSTEM_PROMPT } from "@/lib/systemPrompt"
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     const history = await prisma.message.findMany({
         where: { sessionId },
         orderBy: { createdAt: "asc" },
-        take: 12,
+        take: 20,
     })
 
     const response = await openai.chat.completions.create({
@@ -65,6 +66,14 @@ export async function POST(req: Request) {
             contactRequestedField: null,
             collectedContact: null,
             nextQuestions: [],
+            conversationPhase: null,
+            eventFrequency: null,
+            organizerName: null,
+            eventName: null,
+            attendeeCount: null,
+            vendorCount: null,
+            teamSize: null,
+            biggestPain: null,
         }
     }
 
@@ -80,6 +89,16 @@ export async function POST(req: Request) {
     const contact = parsed.collectedContact || extractContact(message)
 
     if (contact) {
+        const profileFields = {
+            ...(parsed.eventFrequency ? { eventFrequency: parsed.eventFrequency } : {}),
+            ...(parsed.organizerName ? { organizerName: parsed.organizerName } : {}),
+            ...(parsed.eventName ? { eventName: parsed.eventName } : {}),
+            ...(parsed.attendeeCount ? { attendeeCount: parsed.attendeeCount } : {}),
+            ...(parsed.vendorCount ? { vendorCount: parsed.vendorCount } : {}),
+            ...(parsed.teamSize ? { teamSize: parsed.teamSize } : {}),
+            ...(parsed.biggestPain ? { biggestPain: parsed.biggestPain } : {}),
+        }
+
         await prisma.lead.upsert({
             where: { sessionId },
             update: {
@@ -87,6 +106,7 @@ export async function POST(req: Request) {
                 contactValue: contact.value,
                 stage: parsed.stage,
                 score: parsed.score,
+                ...profileFields,
             },
             create: {
                 sessionId,
@@ -94,8 +114,32 @@ export async function POST(req: Request) {
                 contactValue: contact.value,
                 stage: parsed.stage,
                 score: parsed.score,
+                ...profileFields,
             },
         })
+    }
+
+    // Send confirmation email when gathering is complete
+    if (parsed.conversationPhase === "GATHERED") {
+        const existingLead = await prisma.lead.findUnique({
+            where: { sessionId },
+        })
+
+        if (existingLead && !existingLead.emailSent && existingLead.contactType === "email") {
+            const sent = await sendCircleEmail(
+                existingLead.contactValue,
+                existingLead.organizerName ?? parsed.organizerName,
+                existingLead.eventFrequency ?? parsed.eventFrequency,
+                existingLead.biggestPain ?? parsed.biggestPain
+            )
+
+            if (sent) {
+                await prisma.lead.update({
+                    where: { sessionId },
+                    data: { emailSent: true },
+                })
+            }
+        }
     }
 
     return NextResponse.json(parsed)

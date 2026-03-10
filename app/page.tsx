@@ -197,6 +197,7 @@ export default function Home() {
               </p>
             ))}
           </div>
+
           <p className="story-skip-hint">tap to skip</p>
         </div>
       </div>
@@ -216,7 +217,7 @@ export default function Home() {
           </div>
 
           <div className="char-bubbles">
-            {visibleMsgs > 0 && <span className="char-sender">Tunai</span>}
+            {visibleMsgs > 0 && <span className="char-sender"></span>}
             {GREETING_MSGS.slice(0, visibleMsgs).map((m, i) => (
               <div key={i} className="char-bubble char-bubble-in">
                 {m.text}
@@ -255,7 +256,7 @@ export default function Home() {
                       setInput("")
                     }
                   }}
-                  placeholder="Or type something..."
+                  placeholder="Ask whatever you want to know..."
                 />
                 <button
                   className="send"
@@ -275,6 +276,7 @@ export default function Home() {
               </div>
             </div>
           )}
+
         </div>
       </div>
     )
