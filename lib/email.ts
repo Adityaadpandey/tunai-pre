@@ -1,6 +1,6 @@
-import { Resend } from "resend"
+import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendCircleEmail(
   email: string,
@@ -8,19 +8,19 @@ export async function sendCircleEmail(
   eventFrequency: string | null,
   biggestPain: string | null
 ) {
-  const firstName = organizerName ? organizerName.split(" ")[0] : null
-  const greeting = firstName ? `Hey ${firstName} —` : "Hey —"
-
+  const firstName = organizerName ? organizerName.split(' ')[0] : null;
+  const greeting = firstName ? `Hey ${firstName} —` : 'Hey —';
+  email = 'tixin.in@gmail.com';
   const freqLine = eventFrequency
     ? `You organise events ${eventFrequency}. That's exactly who we built this for.`
-    : "You're exactly who we built this for."
+    : "You're exactly who we built this for.";
 
   const painLine = biggestPain
-    ? `You mentioned ${biggestPain.toLowerCase().replace(/\.$/, "")} — that's one of the first things we're solving.`
-    : "We're building this from the ground up with organisers like you."
+    ? `You mentioned ${biggestPain.toLowerCase().replace(/\.$/, '')} — that's one of the first things we're solving.`
+    : "We're building this from the ground up with organisers like you.";
 
   const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM || "Tunai <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM || 'Tunai <onboarding@resend.dev>',
     to: email,
     subject: "You're in the Founding Organisers Circle",
     html: `
@@ -48,12 +48,12 @@ export async function sendCircleEmail(
         </p>
       </div>
     `,
-  })
+  });
 
   if (error) {
-    console.error("[sendCircleEmail] Failed to send:", error)
-    return false
+    console.error('[sendCircleEmail] Failed to send:', error);
+    return false;
   }
 
-  return true
+  return true;
 }

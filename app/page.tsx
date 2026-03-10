@@ -1,200 +1,215 @@
-"use client"
+'use client';
 
-import Image from "next/image"
-import { useEffect, useRef, useState } from "react"
-import { v4 as uuidv4 } from "uuid"
+import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ChatMessage {
-  sender: "USER" | "TUNAI"
-  text: string
+  sender: 'USER' | 'TUNAI';
+  text: string;
 }
 
 const CINEMATIC_LINES = [
-  <>Events don't fail because of bad ideas.</>,
+  <>Events don&apos;t fail because of bad ideas.</>,
   <>They fail because coordination is broken.</>,
-  <>There's a fix for that now.</>,
-]
+  <>There&apos;s a fix for that now.</>,
+];
 
 const GREETING_MSGS: ChatMessage[] = [
-  { sender: "TUNAI", text: "Hey 👋 I'm Tunai." },
-  { sender: "TUNAI", text: "I'm an operating system for events — one place to run your team, vendors, tickets, and payments." },
-  { sender: "TUNAI", text: "What do you want to know?" },
-]
+  { sender: 'TUNAI', text: "Hey 👋 I'm Tunai." },
+  {
+    sender: 'TUNAI',
+    text: "I'm an operating system for events — one place to run your team, vendors, tickets, and payments.",
+  },
+  { sender: 'TUNAI', text: 'What do you want to know?' },
+];
 
 const INITIAL_SUGGESTIONS = [
-  "I am a organiser, What can Tunai do for me?",
-  "Organising an Hackathon, how can I use Tunai?",
-  "What are the features of Tunai?",
-]
+  'I am a organiser, What can Tunai do for me?',
+  'Organising an Hackathon, how can I use Tunai?',
+  'What are the features of Tunai?',
+  'I want to Join the Waitlist',
+];
 
-const TYPING_DELAYS = [400, 1000, 800]
-const MSG_PAUSES   = [900, 1100, 1000]
+const TYPING_DELAYS = [400, 1000, 800];
+const MSG_PAUSES = [900, 1100, 1000];
 
-type Phase = "cinematic" | "character" | "chat"
+type Phase = 'cinematic' | 'character' | 'chat';
 
 function initSessionId(): string {
-  if (typeof window === "undefined") return ""
-  let id = localStorage.getItem("tunai_session")
+  if (typeof window === 'undefined') return '';
+  let id = localStorage.getItem('tunai_session');
   if (!id) {
-    id = uuidv4()
-    localStorage.setItem("tunai_session", id)
+    id = uuidv4();
+    localStorage.setItem('tunai_session', id);
   }
-  return id
+  return id;
 }
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("cinematic")
+  const [phase, setPhase] = useState<Phase>('cinematic');
 
   // Cinematic phase
-  const [cinematicStep, setCinematicStep] = useState(0)
+  const [cinematicStep, setCinematicStep] = useState(0);
 
   // Character phase
-  const [visibleMsgs, setVisibleMsgs] = useState(0)
-  const [showTyping, setShowTyping] = useState(false)
-  const [showChips, setShowChips] = useState(false)
+  const [visibleMsgs, setVisibleMsgs] = useState(0);
+  const [showTyping, setShowTyping] = useState(false);
+  const [showChips, setShowChips] = useState(false);
 
   // Chat phase
-  const [sessionId] = useState<string>(initSessionId)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const pendingFirstMsg = useRef<string | null>(null)
+  const [sessionId] = useState<string>(initSessionId);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>(INITIAL_SUGGESTIONS);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pendingFirstMsg = useRef<string | null>(null);
 
   // ── Phase: cinematic ─────────────────────
   useEffect(() => {
-    if (phase !== "cinematic") return
+    if (phase !== 'cinematic') return;
 
-    const t1 = setTimeout(() => setCinematicStep(1), 500)
-    const t2 = setTimeout(() => setCinematicStep(2), 2000)
-    const t3 = setTimeout(() => setCinematicStep(3), 3500)
-    const t4 = setTimeout(() => setPhase("character"), 5200)
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4) }
-  }, [phase])
+    const t1 = setTimeout(() => setCinematicStep(1), 500);
+    const t2 = setTimeout(() => setCinematicStep(2), 2000);
+    const t3 = setTimeout(() => setCinematicStep(3), 3500);
+    const t4 = setTimeout(() => setPhase('character'), 5200);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [phase]);
 
   const skipCinematic = () => {
-    if (phase === "cinematic") {
-      setCinematicStep(3)
-      setPhase("character")
+    if (phase === 'cinematic') {
+      setCinematicStep(3);
+      setPhase('character');
     }
-  }
+  };
 
   // ── Phase: character ─────────────────────
   useEffect(() => {
-    if (phase !== "character") return
+    if (phase !== 'character') return;
 
-    let elapsed = 0
-    const timers: NodeJS.Timeout[] = []
+    let elapsed = 0;
+    const timers: NodeJS.Timeout[] = [];
 
     GREETING_MSGS.forEach((_, i) => {
-      const tTyping = setTimeout(() => setShowTyping(true), elapsed)
-      timers.push(tTyping)
-      elapsed += TYPING_DELAYS[i]
+      const tTyping = setTimeout(() => setShowTyping(true), elapsed);
+      timers.push(tTyping);
+      elapsed += TYPING_DELAYS[i];
 
       const tMsg = setTimeout(() => {
-        setShowTyping(false)
-        setVisibleMsgs(i + 1)
-      }, elapsed)
-      timers.push(tMsg)
-      elapsed += MSG_PAUSES[i]
-    })
+        setShowTyping(false);
+        setVisibleMsgs(i + 1);
+      }, elapsed);
+      timers.push(tMsg);
+      elapsed += MSG_PAUSES[i];
+    });
 
-    const tChips = setTimeout(() => setShowChips(true), elapsed)
-    timers.push(tChips)
+    const tChips = setTimeout(() => setShowChips(true), elapsed);
+    timers.push(tChips);
 
-    return () => timers.forEach(clearTimeout)
-  }, [phase])
+    return () => timers.forEach(clearTimeout);
+  }, [phase]);
 
   // ── Transition to chat ────────────────────
   const enterChat = (firstMsg?: string) => {
-    setMessages([...GREETING_MSGS])
-    setSuggestions([])
+    setMessages([...GREETING_MSGS]);
+    setSuggestions([]);
     if (firstMsg) {
-      pendingFirstMsg.current = firstMsg
+      pendingFirstMsg.current = firstMsg;
     }
-    setPhase("chat")
-  }
+    setPhase('chat');
+  };
 
   // Fire pending first message once phase = "chat" has committed
   useEffect(() => {
-    if (phase !== "chat") return
-    const msg = pendingFirstMsg.current
-    if (!msg) return
-    pendingFirstMsg.current = null
-    sendMessage(msg)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
+    if (phase !== 'chat') return;
+    const msg = pendingFirstMsg.current;
+    if (!msg) return;
+    pendingFirstMsg.current = null;
+    sendMessage(msg);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // ── Chat ─────────────────────────────────
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, loading])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
   async function sendMessage(text?: string) {
-    const msg = text || input
-    if (!msg.trim() || loading || !sessionId) return
+    const msg = text || input;
+    if (!msg.trim() || loading || !sessionId) return;
 
-    setLoading(true)
-    setInput("")
-    setSuggestions([])
+    setLoading(true);
+    setInput('');
+    setSuggestions([]);
 
-    const userMsg: ChatMessage = { sender: "USER", text: msg }
-    setMessages((prev) => [...prev, userMsg])
+    const userMsg: ChatMessage = { sender: 'USER', text: msg };
+    setMessages((prev) => [...prev, userMsg]);
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, message: msg }),
-      })
+      });
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`)
+        throw new Error(`HTTP ${res.status}`);
       }
 
-      const data = await res.json()
+      const data = await res.json();
       setMessages((prev) => [
         ...prev,
-        { sender: "TUNAI", text: data.reply || data.error || "Something went wrong." },
-      ])
+        { sender: 'TUNAI', text: data.reply || data.error || 'Something went wrong.' },
+      ]);
       if (data.nextQuestions?.length) {
-        setSuggestions(data.nextQuestions)
+        setSuggestions(data.nextQuestions);
       }
     } catch {
       setMessages((prev) => [
         ...prev,
-        { sender: "TUNAI", text: "Connection error. Please try again." },
-      ])
+        { sender: 'TUNAI', text: 'Connection error. Please try again.' },
+      ]);
     } finally {
-      setLoading(false)
-      inputRef.current?.focus()
+      setLoading(false);
+      inputRef.current?.focus();
     }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   }
 
   // ══════════════════════════════════════════
   // RENDER: Cinematic
   // ══════════════════════════════════════════
-  if (phase === "cinematic") {
+  if (phase === 'cinematic') {
     return (
       <div className="story-screen" onClick={skipCinematic}>
         <div className="story-content">
-          <div className={`story-logo ${cinematicStep >= 1 ? "story-logo-visible" : ""}`}>
-            <Image src="/logo.png" alt="Tunai — The Operating System for Events" width={48} height={48} priority />
+          <div className={`story-logo ${cinematicStep >= 1 ? 'story-logo-visible' : ''}`}>
+            <Image
+              src="/logo.png"
+              alt="Tunai — The Operating System for Events"
+              width={48}
+              height={48}
+              priority
+            />
           </div>
           <div className="story-lines-container">
             {CINEMATIC_LINES.map((line, idx) => (
               <p
                 key={idx}
-                className={`story-line ${cinematicStep > idx ? "story-line-visible" : ""}`}
+                className={`story-line ${cinematicStep > idx ? 'story-line-visible' : ''}`}
               >
                 {line}
               </p>
@@ -204,13 +219,13 @@ export default function Home() {
           <p className="story-skip-hint">tap to skip</p>
         </div>
       </div>
-    )
+    );
   }
 
   // ══════════════════════════════════════════
   // RENDER: Character intro
   // ══════════════════════════════════════════
-  if (phase === "character") {
+  if (phase === 'character') {
     return (
       <div className="char-screen">
         <div className="char-inner">
@@ -230,7 +245,9 @@ export default function Home() {
             {showTyping && (
               <div className="char-bubble char-typing-bubble">
                 <div className="typing">
-                  <span /><span /><span />
+                  <span />
+                  <span />
+                  <span />
                 </div>
               </div>
             )}
@@ -253,10 +270,10 @@ export default function Home() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && input.trim()) {
-                      e.preventDefault()
-                      enterChat(input.trim())
-                      setInput("")
+                    if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
+                      e.preventDefault();
+                      enterChat(input.trim());
+                      setInput('');
                     }
                   }}
                   placeholder="Ask whatever you want to know..."
@@ -265,8 +282,8 @@ export default function Home() {
                   className="send"
                   onClick={() => {
                     if (input.trim()) {
-                      enterChat(input.trim())
-                      setInput("")
+                      enterChat(input.trim());
+                      setInput('');
                     }
                   }}
                   disabled={!input.trim()}
@@ -279,10 +296,9 @@ export default function Home() {
               </div>
             </div>
           )}
-
         </div>
       </div>
-    )
+    );
   }
 
   // ══════════════════════════════════════════
@@ -305,13 +321,13 @@ export default function Home() {
 
       <div className="messages">
         {messages.map((m, i) => (
-          <div key={i} className={`msg ${m.sender === "USER" ? "msg-user" : "msg-ai"}`}>
-            {m.sender === "TUNAI" && (
+          <div key={i} className={`msg ${m.sender === 'USER' ? 'msg-user' : 'msg-ai'}`}>
+            {m.sender === 'TUNAI' && (
               <div className="msg-avatar">
                 <Image src="/logo.png" alt="T" width={28} height={28} />
               </div>
             )}
-            <div className={`bubble ${m.sender === "USER" ? "bubble-user" : "bubble-ai"}`}>
+            <div className={`bubble ${m.sender === 'USER' ? 'bubble-user' : 'bubble-ai'}`}>
               {m.text}
             </div>
           </div>
@@ -324,7 +340,9 @@ export default function Home() {
             </div>
             <div className="bubble bubble-ai">
               <div className="typing">
-                <span /><span /><span />
+                <span />
+                <span />
+                <span />
               </div>
             </div>
           </div>
@@ -366,5 +384,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  )
+  );
 }
