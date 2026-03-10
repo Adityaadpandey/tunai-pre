@@ -294,7 +294,8 @@ html, body {
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.14s ease;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: left;
   touch-action: manipulation;
   min-height: 36px;
 }
@@ -520,6 +521,26 @@ html, body {
   justify-content: center;
   position: relative;
   z-index: 1;
+}
+
+.story-logo {
+  margin-bottom: 32px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.story-logo-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.story-logo img {
+  border-radius: 12px;
+  border: 1px solid var(--w-12);
+  display: block;
+  object-fit: contain;
+  background: var(--w-4);
 }
 
 .story-line {

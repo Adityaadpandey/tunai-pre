@@ -187,6 +187,9 @@ export default function Home() {
     return (
       <div className="story-screen" onClick={skipCinematic}>
         <div className="story-content">
+          <div className={`story-logo ${cinematicStep >= 1 ? "story-logo-visible" : ""}`}>
+            <Image src="/logo.png" alt="Tunai — The Operating System for Events" width={48} height={48} priority />
+          </div>
           <div className="story-lines-container">
             {CINEMATIC_LINES.map((line, idx) => (
               <p

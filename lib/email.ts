@@ -25,6 +25,9 @@ export async function sendCircleEmail(
     subject: "You're in the Founding Organisers Circle",
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 24px; color: #1a1a1a;">
+        <div style="margin-bottom: 32px;">
+          <img src="https://www.tunai.app/logo.png" alt="Tunai — The Operating System for Events" width="40" height="40" style="border-radius: 10px; display: block;" />
+        </div>
         <p style="font-size: 15px; line-height: 1.7; color: #1a1a1a; margin: 0 0 16px;">
           ${greeting}
         </p>
