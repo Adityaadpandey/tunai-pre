@@ -1,5 +1,5 @@
-import { ImageResponse } from "next/og";
 import { readFile } from "fs/promises";
+import { ImageResponse } from "next/og";
 import { join } from "path";
 
 export const runtime = "nodejs";
@@ -7,7 +7,7 @@ export const alt = "Tunai — The Operating System for Events";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-export default async function OgImage() {
+export default async function TwitterImage() {
   const logoData = await readFile(join(process.cwd(), "public", "logo.png"));
   const logoBase64 = `data:image/png;base64,${logoData.toString("base64")}`;
 
@@ -27,7 +27,7 @@ export default async function OgImage() {
           position: "relative",
         }}
       >
-        {/* Subtle grid lines */}
+        {/* Grid */}
         <div
           style={{
             position: "absolute",
@@ -38,7 +38,7 @@ export default async function OgImage() {
           }}
         />
 
-        {/* Top-right glow */}
+        {/* Glow */}
         <div
           style={{
             position: "absolute",
@@ -52,7 +52,7 @@ export default async function OgImage() {
           }}
         />
 
-        {/* Brand mark with actual logo */}
+        {/* Logo + brand */}
         <div
           style={{
             position: "absolute",
@@ -83,7 +83,7 @@ export default async function OgImage() {
           </span>
         </div>
 
-        {/* Main headline */}
+        {/* Headline */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <p
             style={{
@@ -115,7 +115,7 @@ export default async function OgImage() {
           </p>
         </div>
 
-        {/* Bottom-right badge */}
+        {/* Badge */}
         <div
           style={{
             position: "absolute",
@@ -150,7 +150,7 @@ export default async function OgImage() {
           </span>
         </div>
 
-        {/* Bottom-left URL */}
+        {/* URL */}
         <div
           style={{
             position: "absolute",

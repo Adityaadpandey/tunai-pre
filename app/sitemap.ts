@@ -5,8 +5,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: "https://www.tunai.app",
       lastModified: new Date(),
-      changeFrequency: "monthly",
+      changeFrequency: "weekly",
       priority: 1,
+      images: ["https://www.tunai.app/logo.png"],
     },
   ];
 }
