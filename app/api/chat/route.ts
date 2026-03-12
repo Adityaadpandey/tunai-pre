@@ -14,7 +14,7 @@ function extractContact(text: string) {
 }
 
 export async function POST(req: Request) {
-    const { sessionId, message } = await req.json()
+    const { sessionId, message, history } = await req.json()
 
     if (!sessionId || !message)
         return NextResponse.json({ error: "Invalid input" }, { status: 400 })
@@ -33,21 +33,11 @@ export async function POST(req: Request) {
         },
     })
 
-    const history = await prisma.message.findMany({
-        where: { sessionId },
-        orderBy: { createdAt: "asc" },
-        take: 20,
-    })
-
     const response = await openai.chat.completions.create({
         model: "gpt-5.4-2026-03-05",
         messages: [
             { role: "system", content: SYSTEM_PROMPT },
-            ...history.map((m) => ({
-                role: m.sender === "USER" ? ("user" as const) : ("assistant" as const),
-                content: m.content,
-            })),
-            { role: "user", content: message },
+            ...(history ?? []),
         ],
     })
 

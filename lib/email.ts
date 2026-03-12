@@ -10,7 +10,6 @@ export async function sendCircleEmail(
 ) {
   const firstName = organizerName ? organizerName.split(' ')[0] : null;
   const greeting = firstName ? `Hey ${firstName} —` : 'Hey —';
-  email = 'tixin.in@gmail.com';
   const freqLine = eventFrequency
     ? `You organise events ${eventFrequency}. That's exactly who we built this for.`
     : "You're exactly who we built this for.";

@@ -153,10 +153,18 @@ export default function Home() {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
+      const chatHistory = messages
+        .filter((m) => m.sender === 'USER' || m.sender === 'TUNAI')
+        .map((m) => ({ role: m.sender === 'USER' ? 'user' : 'assistant', content: m.text }));
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, message: msg }),
+        body: JSON.stringify({
+          sessionId,
+          message: msg,
+          history: [...chatHistory, { role: 'user', content: msg }],
+        }),
       });
 
       if (!res.ok) {
